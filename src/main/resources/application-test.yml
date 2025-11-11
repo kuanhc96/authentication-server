@@ -1,0 +1,24 @@
+spring:
+  application:
+    name: authentication-server
+  config:
+    import: "configserver:http://localhost:8071/"
+management:
+  health:
+    rabbit:
+      enabled: true
+  info:
+    env:
+      enabled: true
+  endpoint:
+    shutdown:
+      access: unrestricted
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+info:
+  app:
+    name: authentication-server
+    description: "Freelance Authentication Server"
+    version: "1.0.0"

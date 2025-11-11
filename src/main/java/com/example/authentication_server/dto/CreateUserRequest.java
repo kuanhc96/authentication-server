@@ -5,6 +5,7 @@ import java.time.LocalDate;
 import lombok.Builder;
 import lombok.Data;
 
+import com.example.authentication_server.enums.Gender;
 import com.example.authentication_server.enums.UserRole;
 
 @Data

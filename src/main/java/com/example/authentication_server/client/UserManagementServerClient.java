@@ -14,7 +14,7 @@ import com.example.authentication_server.dto.CreateUserResponse;
 import com.example.authentication_server.dto.GetUserResponse;
 import com.example.authentication_server.enums.UserRole;
 
-@FeignClient("freelance-user-management-server")
+@FeignClient(name = "freelance-user-management-server", configuration = OAuth2FeignConfig.class)
 public interface UserManagementServerClient {
 	@PostMapping(value = "/user/create", consumes = "application/json")
 	ResponseEntity<CreateUserResponse> createUser(@RequestBody CreateUserRequest request);

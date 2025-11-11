@@ -5,6 +5,9 @@ import java.util.stream.Collectors;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.ProviderManager;
@@ -16,6 +19,8 @@ import org.springframework.security.oauth2.server.authorization.OAuth2TokenType;
 import org.springframework.security.oauth2.server.authorization.token.JwtEncodingContext;
 import org.springframework.security.oauth2.server.authorization.token.OAuth2TokenCustomizer;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.HttpStatusEntryPoint;
+import org.springframework.security.web.savedrequest.HttpSessionRequestCache;
 
 import com.example.authentication_server.component.FreelanceAuthenticationDetailsSource;
 import com.example.authentication_server.client.UserManagementServerClient;
@@ -28,20 +33,52 @@ public class ProjectSecurityConfig {
 	@Bean
 	public SecurityFilterChain defaultSecurityFilterChain(HttpSecurity http, FreelanceAuthenticationDetailsSource freelanceAuthenticationDetailsSource) throws Exception {
 		http
-				.authorizeHttpRequests(
-						(authorize) -> authorize.requestMatchers(
-								"/login",
-								"/actuator/**",
-								"/user/create",
-								"/user/delete/**"
-						).permitAll()
-				)
+				.securityMatcher("/login")
 				.cors(cors -> cors.disable())
 				.csrf(csrf -> csrf.disable())
 				.formLogin(form -> form
-						.loginPage("http://localhost:8080/login")
+						.loginPage("http://localhost:5173/login")
+						.usernameParameter("email")
+						.loginProcessingUrl("/login")
 						.authenticationDetailsSource(freelanceAuthenticationDetailsSource)
+						.successHandler((req, res, auth) -> {
+							res.resetBuffer();
+							res.setStatus(HttpStatus.OK.value());
+							res.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE);
+
+							var savedReq = new HttpSessionRequestCache().getRequest(req, res);
+							res.getWriter()
+									.append("{\"redirectUrl\": \"")
+									.append(savedReq == null ? "": savedReq.getRedirectUrl())
+									.append("\"}");
+							res.flushBuffer();
+						})
+						.failureHandler((req, res, ex) -> res.setStatus(HttpStatus.UNAUTHORIZED.value()))
+				)
+				.logout(logout -> logout.logoutSuccessUrl("http://localhost:5173/login?logout"))
+				.exceptionHandling(handler -> handler.authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.FORBIDDEN)))
+				.authorizeHttpRequests(
+						(authorize) -> authorize.requestMatchers(
+								"/actuator/**",
+								"/user/create",
+								"/user/delete/**"
+						).permitAll().anyRequest().authenticated()
 				);
+
+//				.authorizeHttpRequests(
+//						(authorize) -> authorize.requestMatchers(
+//								"/login",
+//								"/actuator/**",
+//								"/user/create",
+//								"/user/delete/**"
+//						).permitAll()
+//				)
+//				.cors(cors -> cors.disable())
+//				.csrf(csrf -> csrf.disable())
+//				.formLogin(form -> form
+//						.loginPage("http://localhost:8080/login")
+//						.authenticationDetailsSource(freelanceAuthenticationDetailsSource)
+//				);
 		return http.build();
 	}
 

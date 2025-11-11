@@ -11,7 +11,8 @@ public class FreelanceWebAuthenticationDetails extends WebAuthenticationDetails 
 
 	public FreelanceWebAuthenticationDetails(HttpServletRequest request) {
 		super(request);
-		this.role = UserRole.valueOf(request.getParameter("role"));
+		String temp = request.getParameter("role");
+		this.role = UserRole.valueOf(temp);
 	}
 
 	public UserRole getRole() {
